@@ -1,43 +1,48 @@
 package fit.messagequeuerabbitmq.config;
 
-import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
-import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
 
 @Configuration
 public class JwtConfig {
 
     @Bean
-    JwtEncoder jwtEncoder() throws Exception {
-        String key = new String(
-                getClass().getClassLoader()
-                        .getResourceAsStream("keys/private.key")
-                        .readAllBytes()
-        );
+    public KeyPair keyPair() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        return generator.generateKeyPair();
+    }
 
-        key = key.replaceAll("-----\\w+ PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
-
-        RSAPrivateKey privateKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
-                .generatePrivate(new PKCS8EncodedKeySpec(
-                        Base64.getDecoder().decode(key)
-                ));
-
-        JWK jwk = new RSAKey.Builder((RSAPublicKey) null)
-                .privateKey(privateKey)
+    @Bean
+    public JwtEncoder jwtEncoder(KeyPair keyPair) {
+        RSAKey rsaKey = new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
+                .privateKey((RSAPrivateKey) keyPair.getPrivate())
                 .build();
 
-        return new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
+        JWKSource<SecurityContext> jwkSource =
+                new ImmutableJWKSet<>(new JWKSet(rsaKey));
+
+        return new NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(KeyPair keyPair) {
+        return NimbusJwtDecoder.withPublicKey(
+                (RSAPublicKey) keyPair.getPublic()
+        ).build();
     }
 }
