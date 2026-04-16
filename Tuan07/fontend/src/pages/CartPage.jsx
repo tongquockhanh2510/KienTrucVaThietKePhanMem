@@ -32,7 +32,7 @@ export default function CartPage({ cart, updateCartQty, cartTotal, onPlaceOrder,
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #f0ede8", overflow: "hidden" }}>
             {cart.map((item, idx) => (
               <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderBottom: idx < cart.length - 1 ? "1px solid #f5f2ed" : "none" }}>
-                <div style={{ fontSize: 32, width: 48, height: 48, background: "#E1F5EE", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>{item.image}</div>
+                <img src={item.image || "https://via.placeholder.com/80x80"} alt={item.name} style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>{item.name}</div>
                   <div style={{ fontSize: 13, color: "#1D9E75", fontWeight: 600 }}>{formatPrice(item.price)}</div>
@@ -56,7 +56,7 @@ export default function CartPage({ cart, updateCartQty, cartTotal, onPlaceOrder,
             <div style={{ display: "flex", gap: 12 }}>
               {[
                 { value: "CASH", label: "Tien mat (CASH)", desc: "Thanh toan khi nhan hang" },
-                { value: "BANK_TRANSFER", label: "Chuyen khoan", desc: "Qua ngan hang / vi dien tu" },
+                { value: "BANKING", label: "Chuyen khoan", desc: "Qua ngan hang / vi dien tu" },
               ].map((m) => (
                 <div
                   key={m.value}

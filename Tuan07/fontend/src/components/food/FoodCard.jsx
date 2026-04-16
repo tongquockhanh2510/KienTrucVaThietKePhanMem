@@ -2,49 +2,116 @@ import { formatPrice } from "../../utils/formatPrice";
 
 export default function FoodCard({ food, onAdd }) {
   return (
-    <div className="food-card" style={{ background: "#fff", borderRadius: 16, overflow: "hidden", border: "1px solid #f0ede8", opacity: food.available ? 1 : 0.55 }}>
+    <div
+      className="food-card"
+      style={{
+        background: "#fff",
+        borderRadius: 16,
+        overflow: "hidden",
+        border: "1px solid #f0ede8",
+        opacity: food.available ? 1 : 0.55
+      }}
+    >
+      {/* IMAGE */}
       <div
         style={{
-          height: 120,
-          background: food.available ? "linear-gradient(135deg, #E1F5EE, #9FE1CB)" : "#f5f5f5",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 52,
+          height: 140,
           position: "relative",
+          overflow: "hidden"
         }}
       >
-        
-        <img src={`${food.image}`} alt="" />
+        <img
+          src={food.image || "https://via.placeholder.com/300x200"}
+          alt={food.name}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover", // 🔥 quan trọng
+            display: "block"
+          }}
+        />
+
+        {/* Overlay hết món */}
         {!food.available && (
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(0,0,0,0.35)",
+              background: "rgba(0,0,0,0.4)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#fff",
               fontWeight: 700,
-              fontSize: 13,
-              letterSpacing: 0.5,
+              fontSize: 14,
+              letterSpacing: 1
             }}
           >
-            HET MON
+            HẾT MÓN
           </div>
         )}
-        <div style={{ position: "absolute", top: 10, right: 10, background: "#fff", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: "#1D9E75" }}>
+
+        {/* Category */}
+        <div
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            background: "#fff",
+            borderRadius: 20,
+            padding: "4px 10px",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#1D9E75"
+          }}
+        >
           {food.category}
         </div>
       </div>
+
+      {/* CONTENT */}
       <div style={{ padding: "14px 16px" }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 4 }}>{food.name}</div>
-        <div style={{ fontSize: 12, color: "#888", marginBottom: 12, lineHeight: 1.5 }}>{food.description}</div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: "#1D9E75" }}>{formatPrice(food.price)}</div>
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: 15,
+            color: "#1a1a1a",
+            marginBottom: 4
+          }}
+        >
+          {food.name}
+        </div>
+
+        <div
+          style={{
+            fontSize: 12,
+            color: "#888",
+            marginBottom: 12,
+            lineHeight: 1.5,
+            minHeight: 36 // giữ chiều cao đồng đều
+          }}
+        >
+          {food.description}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 800,
+              fontSize: 16,
+              color: "#1D9E75"
+            }}
+          >
+            {formatPrice(food.price)}
+          </div>
+
           <button
-            className="btn-primary"
             onClick={() => onAdd(food)}
             disabled={!food.available}
             style={{
@@ -55,11 +122,10 @@ export default function FoodCard({ food, onAdd }) {
               background: food.available ? "#1D9E75" : "#ccc",
               color: "#fff",
               fontWeight: 700,
-              fontSize: 13,
-              fontFamily: "inherit",
+              fontSize: 13
             }}
           >
-            + Them
+            + Thêm
           </button>
         </div>
       </div>

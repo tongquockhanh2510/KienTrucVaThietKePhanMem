@@ -6,25 +6,25 @@ export default defineConfig({
   server: {
     proxy: {
       "/auth": {
-        target: "http://10.62.245.189:3001",
+        target: "http://localhost:8081",
         changeOrigin: true,
         secure: false,
         timeout: 10000,
       },
       "/food": {
-        target: "http://10.62.245.240:3000",
+        target: "http://localhost:8082",
         changeOrigin: true,
         secure: false,
         timeout: 10000,
       },
       "/orders": {
-        target: "http://10.62.245.15:8083",
+        target: "http://localhost:8083",
         changeOrigin: true,
         secure: false,
         timeout: 10000,
       },
       "/payments": {
-        target: "http://10.62.245.189:3000",
+        target: "http://localhost:8084",
         changeOrigin: true,
         secure: false,
         timeout: 10000,

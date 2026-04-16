@@ -8,12 +8,40 @@ import OrdersPage from "./pages/OrdersPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
+function normalizeVietnamese(text) {
+  return String(text ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+}
+
+function toVietnameseCategory(rawCategory) {
+  const normalized = normalizeVietnamese(rawCategory);
+
+  const map = {
+    com: "Cơm",
+    pho: "Phở",
+    "banh mi": "Bánh mì",
+    bun: "Bún",
+    goi: "Gỏi",
+    "hu tieu": "Hủ tiếu",
+    "khai vi": "Khai vị",
+    "do uong": "Đồ uống",
+    khac: "Khác",
+  };
+
+  return map[normalized] || rawCategory || "Khác";
+}
+
 function mapFoodItem(item) {
   return {
     id: item.id ?? item._id ?? item.foodId,
     name: item.name ?? item.title ?? item.foodName ?? "Mon an",
-    price: Number(item.price ?? item.amount ?? item.cost ?? 0),
-    category: item.category ?? item.type ?? "Khac",
+    price: Number(item.price ?? item.foodPrice ?? item.amount ?? item.cost ?? item.subtotal ?? 0),
+    category: toVietnameseCategory(item.category ?? item.type ?? "Khác"),
     image: item.image ?? item.imageUrl ?? item.icon ?? "🍽️",
     description: item.description ?? item.desc ?? "",
     available: item.available === 1 || item.available === true || item.isAvailable === 1 || item.isAvailable === true,
@@ -23,11 +51,14 @@ function mapFoodItem(item) {
 
 function mapOrderItem(item) {
   const mappedItems = (item.items ?? item.products ?? []).map(mapFoodItem);
-  const computedTotal = mappedItems.reduce((sum, current) => sum + Number(current.price ?? 0) * Number(current.qty ?? 1), 0);
+  const computedTotal = mappedItems.reduce(
+    (sum, current) => sum + Number(current.price ?? 0) * Number(current.qty ?? 1),
+    0
+  );
   return {
     id: item.id ?? item._id ?? `#${Date.now()}`,
     items: mappedItems,
-    total: Number(item.total ?? item.amount ?? computedTotal),
+    total: Number(item.totalAmount ?? item.total ?? item.amount ?? computedTotal),
     status: item.status ?? "Dang chuan bi",
     paymentMethod: item.paymentMethod ?? item.payment_method ?? "COD",
     createdAt: item.createdAt ?? item.created_at ?? new Date().toLocaleTimeString("vi-VN"),
@@ -52,7 +83,7 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [activeCategory, setActiveCategory] = useState("Tat ca");
+  const [activeCategory, setActiveCategory] = useState("Tất cả");
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingFoods, setLoadingFoods] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -61,7 +92,7 @@ export default function App() {
     const loadFoods = async () => {
       setLoadingFoods(true);
       try {
-        const res = await fetch(API.FOOD_SERVICE, {
+        const res = await fetch(API.url(API.FOOD_SERVICE), {
         });
         const data = await res.json().catch(() => ({}));
         const list = normalizeApiList(data);
@@ -87,7 +118,7 @@ export default function App() {
       setLoadingOrders(true);
       try {
         const token = localStorage.getItem("access_token");
-        const res = await fetch(API.ORDER_SERVICE, {
+        const res = await fetch(API.url(API.ORDER_SERVICE), {
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
@@ -130,8 +161,10 @@ export default function App() {
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const filteredFoods = foods.filter((f) => {
-    const matchCat = activeCategory === "Tat ca" || f.category === activeCategory;
-    const matchSearch = f.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchCat =
+      normalizeVietnamese(activeCategory) === normalizeVietnamese("Tất cả") ||
+      normalizeVietnamese(f.category) === normalizeVietnamese(activeCategory);
+    const matchSearch = normalizeVietnamese(f.name).includes(normalizeVietnamese(searchQuery));
     return matchCat && matchSearch;
   });
 
@@ -145,7 +178,7 @@ export default function App() {
         foodName: item.name,
         foodPrice: item.price,
       }));
-      const res = await fetch(API.ORDER_SERVICE, {
+      const res = await fetch(API.url(API.ORDER_SERVICE), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

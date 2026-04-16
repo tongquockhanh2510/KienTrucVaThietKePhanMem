@@ -29,7 +29,7 @@ export default function LoginPage({ onLogin, onRegister }) {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(API.AUTH_LOGIN, {
+      const res = await fetch(API.url(API.AUTH_LOGIN), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

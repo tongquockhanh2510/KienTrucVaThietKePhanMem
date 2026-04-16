@@ -33,7 +33,7 @@ export default function RegisterPage({ onRegister, onBack }) {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(API.AUTH_REGISTER, {
+      const res = await fetch(API.url(API.AUTH_REGISTER), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
