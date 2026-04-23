@@ -1,0 +1,282 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # SHARED INFRASTRUCTURE
+  # ============================================
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: movie_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "admin", "-p", "password123", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"      # AMQP port
+      - "15672:15672"    # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # API GATEWAY
+  # ============================================
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      # Load balancer configuration for multiple service instances
+      USER_SERVICE_URLS: http://user-service-1:8081,http://user-service-2:8081
+      MOVIE_SERVICE_URLS: http://movie-service-1:8082,http://movie-service-2:8082
+      BOOKING_SERVICE_URLS: http://booking-service-1:8083,http://booking-service-2:8083
+    networks:
+      - microservices-network
+    depends_on:
+      - user-service-1
+      - user-service-2
+      - movie-service-1
+      - movie-service-2
+      - booking-service-1
+      - booking-service-2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # USER SERVICE - Multiple Instances
+  # ============================================
+
+  user-service-1:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: user-service-1
+    restart: always
+    environment:
+      PORT: 8081
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      SERVICE_NAME: user-service-1
+      INSTANCE_ID: 1
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  user-service-2:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: user-service-2
+    restart: always
+    environment:
+      PORT: 8081
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      SERVICE_NAME: user-service-2
+      INSTANCE_ID: 2
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # MOVIE SERVICE - Multiple Instances
+  # ============================================
+
+  movie-service-1:
+    build:
+      context: ./backend/Movie-service
+      dockerfile: Dockerfile
+    container_name: movie-service-1
+    restart: always
+    environment:
+      PORT: 8082
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      MONGO_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
+      SERVICE_NAME: movie-service-1
+      INSTANCE_ID: 1
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  movie-service-2:
+    build:
+      context: ./backend/Movie-service
+      dockerfile: Dockerfile
+    container_name: movie-service-2
+    restart: always
+    environment:
+      PORT: 8082
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      MONGO_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
+      SERVICE_NAME: movie-service-2
+      INSTANCE_ID: 2
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # BOOKING SERVICE - Multiple Instances
+  # ============================================
+
+  booking-service-1:
+    build:
+      context: ./backend/movie-booking
+      dockerfile: Dockerfile
+    container_name: booking-service-1
+    restart: always
+    environment:
+      PORT: 8083
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      USER_SERVICE_URL: http://user-service-1:8081
+      MOVIE_SERVICE_URL: http://movie-service-1:8082
+      SERVICE_NAME: booking-service-1
+      INSTANCE_ID: 1
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  booking-service-2:
+    build:
+      context: ./backend/movie-booking
+      dockerfile: Dockerfile
+    container_name: booking-service-2
+    restart: always
+    environment:
+      PORT: 8083
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      USER_SERVICE_URL: http://user-service-2:8081
+      MOVIE_SERVICE_URL: http://movie-service-2:8082
+      SERVICE_NAME: booking-service-2
+      INSTANCE_ID: 2
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # FRONTEND
+  # ============================================
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    networks:
+      - microservices-network
+    depends_on:
+      - api-gateway
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
