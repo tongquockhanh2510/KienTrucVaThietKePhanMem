@@ -108,13 +108,25 @@ export default function MoviesPage() {
 function MovieCard({ movie, onBook }) {
   const soldOut = movie.availableSeats <= 0
   const lowStock = movie.availableSeats > 0 && movie.availableSeats <= 10
+  const [posterFailed, setPosterFailed] = useState(false)
+  const showPoster = Boolean(movie.posterUrl) && !posterFailed
 
   return (
     <div className="movie-card">
-      <div className="movie-poster-placeholder">
-        🎬
-        <span>{movie.genre}</span>
-      </div>
+      {showPoster ? (
+        <img
+          className="movie-poster"
+          src={movie.posterUrl}
+          alt={movie.title}
+          loading="lazy"
+          onError={() => setPosterFailed(true)}
+        />
+      ) : (
+        <div className="movie-poster-placeholder">
+          🎬
+          <span>{movie.genre}</span>
+        </div>
+      )}
       <div className="movie-info">
         <span className="movie-genre">{movie.genre}</span>
         <h3 className="movie-title">{movie.title}</h3>
