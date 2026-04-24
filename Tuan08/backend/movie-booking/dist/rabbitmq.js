@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EVENTS = void 0;
 exports.connectRabbitMQ = connectRabbitMQ;
 exports.publishEvent = publishEvent;
+exports.subscribeEvent = subscribeEvent;
 const amqplib_1 = __importDefault(require("amqplib"));
 const config_1 = require("./config");
 // Use any to avoid complex type issues with amqplib
@@ -50,5 +51,26 @@ function publishEvent(eventName, payload) {
     else {
         console.log(`📤 [NO RABBITMQ] Event: ${eventName}`, payload);
     }
+}
+function subscribeEvent(eventName, handler) {
+    if (!channel) {
+        console.warn(`⚠️  Cannot subscribe to ${eventName} because RabbitMQ is unavailable`);
+        return;
+    }
+    channel.consume(eventName, async (message) => {
+        if (!message) {
+            return;
+        }
+        try {
+            const payload = JSON.parse(message.content.toString());
+            await handler(payload);
+            channel.ack(message);
+        }
+        catch (error) {
+            console.error(`❌ Failed to process event ${eventName}:`, error);
+            channel.nack(message, false, false);
+        }
+    });
+    console.log(`👂 Subscribed to event: ${eventName}`);
 }
 //# sourceMappingURL=rabbitmq.js.map

@@ -7,4 +7,5 @@ export declare const EVENTS: {
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
 export declare function connectRabbitMQ(): Promise<void>;
 export declare function publishEvent(eventName: EventName, payload: object): void;
+export declare function subscribeEvent(eventName: EventName, handler: (payload: any) => Promise<void> | void): void;
 //# sourceMappingURL=rabbitmq.d.ts.map

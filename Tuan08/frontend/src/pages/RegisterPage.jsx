@@ -17,17 +17,20 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (form.password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự')
+      setError('Mat khau phai co it nhat 6 ky tu')
       return
     }
+
     setLoading(true)
     setError('')
+
     try {
       const res = await registerUser(form)
-      setSuccess(`✅ Đăng ký thành công! Chào mừng ${res.data.username}. Đang chuyển hướng...`)
+      const username = res.data?.user?.username || form.username
+      setSuccess(`Dang ky thanh cong! Chao mung ${username}. Dang chuyen huong...`)
       setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+      setError(err.response?.data?.message || 'Dang ky that bai. Vui long thu lai.')
     } finally {
       setLoading(false)
     }
@@ -36,19 +39,19 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-box">
-        <h1 className="auth-title">Tạo tài khoản</h1>
-        <p className="auth-subtitle">Tham gia CinemaX và trải nghiệm đặt vé dễ dàng</p>
+        <h1 className="auth-title">Tao tai khoan</h1>
+        <p className="auth-subtitle">Tham gia CinemaX va trai nghiem dat ve de dang</p>
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Tên đăng nhập</label>
+            <label>Ten dang nhap</label>
             <input
               className="form-control"
               name="username"
-              placeholder="Tên đăng nhập (tối thiểu 3 ký tự)..."
+              placeholder="Ten dang nhap (toi thieu 3 ky tu)..."
               value={form.username}
               onChange={handleChange}
               minLength={3}
@@ -68,12 +71,12 @@ export default function RegisterPage() {
             />
           </div>
           <div className="form-group">
-            <label>Mật khẩu</label>
+            <label>Mat khau</label>
             <input
               className="form-control"
               type="password"
               name="password"
-              placeholder="Tối thiểu 6 ký tự..."
+              placeholder="Toi thieu 6 ky tu..."
               value={form.password}
               onChange={handleChange}
               minLength={6}
@@ -81,12 +84,12 @@ export default function RegisterPage() {
             />
           </div>
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? '⏳ Đang xử lý...' : '🚀 Đăng ký ngay'}
+            {loading ? 'Dang xu ly...' : 'Dang ky ngay'}
           </button>
         </form>
 
         <div className="auth-footer">
-          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+          Da co tai khoan? <Link to="/login">Dang nhap</Link>
         </div>
       </div>
     </div>

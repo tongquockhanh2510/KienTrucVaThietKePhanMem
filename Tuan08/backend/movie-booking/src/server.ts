@@ -2,6 +2,7 @@ import { createApp } from "./app";
 import { config } from "./config";
 import { connectDatabase } from "./db";
 import { connectRabbitMQ } from "./rabbitmq";
+import { startPaymentEventConsumers } from "./services/paymentEvents";
 import type { AddressInfo } from "node:net";
 
 function startServer(app: ReturnType<typeof createApp>, preferredPort: number): Promise<void> {
@@ -48,6 +49,7 @@ async function main() {
 
   // Connect to RabbitMQ (will log only if fails)
   await connectRabbitMQ();
+  startPaymentEventConsumers();
 
   // Create and start Express app
   const app = createApp();

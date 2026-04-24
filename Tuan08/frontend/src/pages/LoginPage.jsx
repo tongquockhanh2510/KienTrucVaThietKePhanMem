@@ -10,6 +10,13 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  const normalizeUserSession = (payload) => ({
+    token: payload?.token || '',
+    userId: payload?.user?.id || payload?.user?._id || '',
+    username: payload?.user?.username || '',
+    email: payload?.user?.email || '',
+  })
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
     setError('')
@@ -21,7 +28,7 @@ export default function LoginPage() {
     setError('')
     try {
       const res = await loginUser(form)
-      login(res.data)
+      login(normalizeUserSession(res.data))
       navigate('/movies')
     } catch (err) {
       setError(err.response?.data?.message || 'Đăng nhập thất bại. Kiểm tra lại tài khoản.')

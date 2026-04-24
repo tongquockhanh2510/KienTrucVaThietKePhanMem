@@ -96,6 +96,8 @@ services:
       NODE_ENV: production
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: your-secure-secret-key-for-production
+      JWT_EXPIRY: 24h
       SERVICE_NAME: user-service-1
       INSTANCE_ID: 1
     networks:
@@ -123,6 +125,8 @@ services:
       NODE_ENV: production
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/movie_db?authSource=admin
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: your-secure-secret-key-for-production
+      JWT_EXPIRY: 24h
       SERVICE_NAME: user-service-2
       INSTANCE_ID: 2
     networks:

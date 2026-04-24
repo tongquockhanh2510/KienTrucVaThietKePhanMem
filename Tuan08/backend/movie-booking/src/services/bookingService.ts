@@ -3,6 +3,7 @@ import { BookingItem } from "../models/Booking";
 import { publishEvent, EVENTS } from "../rabbitmq";
 import { validateUser, getMovie } from "../clients/externalClients";
 import { isInMemoryMode, inMemoryBookings } from "../db";
+import { BookingFailedEvent, BookingCreatedEvent, PaymentCompletedEvent } from "../types";
 
 interface BookingItemInput {
   movieId: string;
@@ -67,14 +68,16 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
     console.log(`💾 Booking saved to memory: ${id}`);
 
     // 4. Publish BOOKING_CREATED event
-    const eventPayload = {
-      event: EVENTS.BOOKING_CREATED,
+    const firstItem = bookingItems[0];
+    const eventPayload: BookingCreatedEvent = {
+      type: EVENTS.BOOKING_CREATED,
       bookingId: id,
       userId,
       userName: booking.userName,
-      items: bookingItems,
-      totalAmount,
-      timestamp: new Date().toISOString(),
+      movieId: firstItem?.movieId,
+      seats: bookingItems.flatMap((bookingItem) => bookingItem.seatNumbers),
+      totalPrice: totalAmount,
+      createdAt: new Date().toISOString(),
     };
 
     publishEvent(EVENTS.BOOKING_CREATED, eventPayload);
@@ -95,14 +98,16 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
   await booking.save();
 
   // 4. Publish BOOKING_CREATED event
-  const eventPayload = {
-    event: EVENTS.BOOKING_CREATED,
+  const firstItem = bookingItems[0];
+  const eventPayload: BookingCreatedEvent = {
+    type: EVENTS.BOOKING_CREATED,
     bookingId: booking._id?.toString() ?? "",
     userId,
     userName: booking.userName,
-    items: bookingItems,
-    totalAmount,
-    timestamp: new Date().toISOString(),
+    movieId: firstItem?.movieId,
+    seats: bookingItems.flatMap((bookingItem) => bookingItem.seatNumbers),
+    totalPrice: totalAmount,
+    createdAt: new Date().toISOString(),
   };
 
   publishEvent(EVENTS.BOOKING_CREATED, eventPayload);
@@ -110,6 +115,40 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
   console.log(`✅ Booking created: ${booking._id} for user ${userId}`);
 
   return booking;
+}
+
+export async function markBookingAsConfirmed(event: PaymentCompletedEvent): Promise<void> {
+  if (isInMemoryMode()) {
+    const booking = inMemoryBookings.get(event.bookingId);
+    if (booking) {
+      booking.status = "CONFIRMED";
+      booking.updatedAt = new Date();
+      inMemoryBookings.set(event.bookingId, booking);
+    }
+    return;
+  }
+
+  await BookingModel.findByIdAndUpdate(event.bookingId, {
+    status: "CONFIRMED",
+    updatedAt: new Date(),
+  }).exec();
+}
+
+export async function markBookingAsFailed(event: BookingFailedEvent): Promise<void> {
+  if (isInMemoryMode()) {
+    const booking = inMemoryBookings.get(event.bookingId);
+    if (booking) {
+      booking.status = "FAILED";
+      booking.updatedAt = new Date();
+      inMemoryBookings.set(event.bookingId, booking);
+    }
+    return;
+  }
+
+  await BookingModel.findByIdAndUpdate(event.bookingId, {
+    status: "FAILED",
+    updatedAt: new Date(),
+  }).exec();
 }
 
 export async function getBookings(userId?: string): Promise<IBooking[]> {

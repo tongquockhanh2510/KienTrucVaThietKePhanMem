@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { publishEvent } = require('../config/rabbitmq');
+const { getJwtSecret, getJwtExpiry } = require('../config/jwt');
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key-here', {
-    expiresIn: process.env.JWT_EXPIRY || '24h'
+  return jwt.sign({ id }, getJwtSecret(), {
+    expiresIn: getJwtExpiry()
   });
 };
 

@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createBooking = createBooking;
+exports.markBookingAsConfirmed = markBookingAsConfirmed;
+exports.markBookingAsFailed = markBookingAsFailed;
 exports.getBookings = getBookings;
 exports.getBookingById = getBookingById;
 const Booking_1 = require("../models/Booking");
@@ -49,14 +51,16 @@ async function createBooking(input) {
         db_1.inMemoryBookings.set(id, booking);
         console.log(`💾 Booking saved to memory: ${id}`);
         // 4. Publish BOOKING_CREATED event
+        const firstItem = bookingItems[0];
         const eventPayload = {
-            event: rabbitmq_1.EVENTS.BOOKING_CREATED,
+            type: rabbitmq_1.EVENTS.BOOKING_CREATED,
             bookingId: id,
             userId,
             userName: booking.userName,
-            items: bookingItems,
-            totalAmount,
-            timestamp: new Date().toISOString(),
+            movieId: firstItem?.movieId,
+            seats: bookingItems.flatMap((bookingItem) => bookingItem.seatNumbers),
+            totalPrice: totalAmount,
+            createdAt: new Date().toISOString(),
         };
         (0, rabbitmq_1.publishEvent)(rabbitmq_1.EVENTS.BOOKING_CREATED, eventPayload);
         console.log(`✅ Booking created (in-memory): ${id} for user ${userId}`);
@@ -72,18 +76,50 @@ async function createBooking(input) {
     });
     await booking.save();
     // 4. Publish BOOKING_CREATED event
+    const firstItem = bookingItems[0];
     const eventPayload = {
-        event: rabbitmq_1.EVENTS.BOOKING_CREATED,
+        type: rabbitmq_1.EVENTS.BOOKING_CREATED,
         bookingId: booking._id?.toString() ?? "",
         userId,
         userName: booking.userName,
-        items: bookingItems,
-        totalAmount,
-        timestamp: new Date().toISOString(),
+        movieId: firstItem?.movieId,
+        seats: bookingItems.flatMap((bookingItem) => bookingItem.seatNumbers),
+        totalPrice: totalAmount,
+        createdAt: new Date().toISOString(),
     };
     (0, rabbitmq_1.publishEvent)(rabbitmq_1.EVENTS.BOOKING_CREATED, eventPayload);
     console.log(`✅ Booking created: ${booking._id} for user ${userId}`);
     return booking;
+}
+async function markBookingAsConfirmed(event) {
+    if ((0, db_1.isInMemoryMode)()) {
+        const booking = db_1.inMemoryBookings.get(event.bookingId);
+        if (booking) {
+            booking.status = "CONFIRMED";
+            booking.updatedAt = new Date();
+            db_1.inMemoryBookings.set(event.bookingId, booking);
+        }
+        return;
+    }
+    await Booking_1.BookingModel.findByIdAndUpdate(event.bookingId, {
+        status: "CONFIRMED",
+        updatedAt: new Date(),
+    }).exec();
+}
+async function markBookingAsFailed(event) {
+    if ((0, db_1.isInMemoryMode)()) {
+        const booking = db_1.inMemoryBookings.get(event.bookingId);
+        if (booking) {
+            booking.status = "FAILED";
+            booking.updatedAt = new Date();
+            db_1.inMemoryBookings.set(event.bookingId, booking);
+        }
+        return;
+    }
+    await Booking_1.BookingModel.findByIdAndUpdate(event.bookingId, {
+        status: "FAILED",
+        updatedAt: new Date(),
+    }).exec();
 }
 async function getBookings(userId) {
     if ((0, db_1.isInMemoryMode)()) {

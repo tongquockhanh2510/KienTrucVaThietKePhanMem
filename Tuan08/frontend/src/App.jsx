@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage'
 import MoviesPage from './pages/MoviesPage'
 import BookingPage from './pages/BookingPage'
 import MyBookingsPage from './pages/MyBookingsPage'
+import PaymentPage from './pages/PaymentPage'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 function PrivateRoute({ children }) {
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/movies" element={<MoviesPage />} />
             <Route path="/book/:movieId" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
+            <Route path="/payment/:bookingId" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
             <Route path="/my-bookings" element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
           </Routes>
         </main>

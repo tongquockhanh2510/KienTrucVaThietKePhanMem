@@ -66,7 +66,7 @@ function createLoadBalancingMiddleware(balancer, pathRewrite) {
         const target = balancer.getNext();
         req.headers['X-Forwarded-For'] = req.ip;
         req.headers['X-Forwarded-Proto'] = req.protocol;
-        
+
         const proxy = createProxyMiddleware({
             target: target,
             changeOrigin: true,
@@ -81,7 +81,7 @@ function createLoadBalancingMiddleware(balancer, pathRewrite) {
                 });
             }
         });
-        
+
         proxy(req, res, next);
     };
 }
@@ -92,7 +92,7 @@ function createLoadBalancingMiddleware(balancer, pathRewrite) {
  */
 function setupProxies(app) {
     console.log('⚙️  Setting up proxy rules with load balancing...');
-    
+
     // ---------------------------------------------------------
     // 1. COMMANDS (Write Operations)
     // ---------------------------------------------------------

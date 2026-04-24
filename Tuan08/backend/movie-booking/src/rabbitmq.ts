@@ -51,3 +51,30 @@ export function publishEvent(eventName: EventName, payload: object): void {
     console.log(`📤 [NO RABBITMQ] Event: ${eventName}`, payload);
   }
 }
+
+export function subscribeEvent(
+  eventName: EventName,
+  handler: (payload: any) => Promise<void> | void
+): void {
+  if (!channel) {
+    console.warn(`⚠️  Cannot subscribe to ${eventName} because RabbitMQ is unavailable`);
+    return;
+  }
+
+  channel.consume(eventName, async (message: any) => {
+    if (!message) {
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(message.content.toString());
+      await handler(payload);
+      channel.ack(message);
+    } catch (error) {
+      console.error(`❌ Failed to process event ${eventName}:`, error);
+      channel.nack(message, false, false);
+    }
+  });
+
+  console.log(`👂 Subscribed to event: ${eventName}`);
+}

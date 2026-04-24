@@ -41,7 +41,7 @@ export async function startNotificationConsumer(): Promise<void> {
       return;
     }
 
-    const notificationText = `User ${event.userId} da dat ve #${event.bookingId} thanh cong`;
+    const notificationText = `Booking #${event.bookingId} thanh cong!`;
 
     await NotificationModel.create({
       userId: event.userId,
@@ -50,7 +50,6 @@ export async function startNotificationConsumer(): Promise<void> {
       message: notificationText,
     });
 
-    console.log(`Booking #${event.bookingId} thanh cong!`);
     console.log(notificationText);
   });
 }

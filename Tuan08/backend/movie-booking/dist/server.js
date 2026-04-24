@@ -4,6 +4,7 @@ const app_1 = require("./app");
 const config_1 = require("./config");
 const db_1 = require("./db");
 const rabbitmq_1 = require("./rabbitmq");
+const paymentEvents_1 = require("./services/paymentEvents");
 function startServer(app, preferredPort) {
     return new Promise((resolve, reject) => {
         const server = app.listen(preferredPort, config_1.config.host, () => {
@@ -40,6 +41,7 @@ async function main() {
     await (0, db_1.connectDatabase)();
     // Connect to RabbitMQ (will log only if fails)
     await (0, rabbitmq_1.connectRabbitMQ)();
+    (0, paymentEvents_1.startPaymentEventConsumers)();
     // Create and start Express app
     const app = (0, app_1.createApp)();
     await startServer(app, config_1.config.port);

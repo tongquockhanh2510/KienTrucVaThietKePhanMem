@@ -29,12 +29,31 @@ export interface Booking {
     updatedAt: Date;
 }
 export interface BookingCreatedEvent {
-    event: "BOOKING_CREATED";
+    type: "BOOKING_CREATED";
     bookingId: string;
     userId: string;
     userName?: string;
-    items: BookingItem[];
-    totalAmount: number;
-    timestamp: string;
+    movieId?: string;
+    seats: string[];
+    totalPrice: number;
+    createdAt: string;
+}
+export interface PaymentCompletedEvent {
+    type: "PAYMENT_COMPLETED";
+    bookingId: string;
+    userId: string;
+    paymentId: string;
+    amount: number;
+    transactionRef: string;
+    paidAt: string;
+}
+export interface BookingFailedEvent {
+    type: "BOOKING_FAILED";
+    bookingId: string;
+    userId: string;
+    paymentId: string;
+    amount: number;
+    reason: string;
+    failedAt: string;
 }
 //# sourceMappingURL=types.d.ts.map

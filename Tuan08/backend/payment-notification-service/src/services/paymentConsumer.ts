@@ -73,8 +73,7 @@ export async function startPaymentConsumer(): Promise<void> {
 
     await wait(500 + Math.floor(Math.random() * 1500));
 
-    // const paymentSuccess = randomPaymentResult();
-    const paymentSuccess = true;
+    const paymentSuccess = randomPaymentResult();
     const transactionRef = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
     if (paymentSuccess) {
